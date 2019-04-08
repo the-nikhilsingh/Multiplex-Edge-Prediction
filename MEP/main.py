@@ -6,9 +6,9 @@ import sys
 import tools
 import time
 
-
 def main():
-    infinity = 10000000000000
+    #Argument Passer
+    infinity = 10000000000000 #10 Trillion
     max_err = 0.0000001
     p = ArgumentParser()
     p.add_argument('-f', '--folder', type=str, default='')
@@ -23,26 +23,27 @@ def main():
     p.add_argument('-u', '--undirected', type=int, default=0)
     p.add_argument('-z', '--rseed', type=int, default=0)
     args = p.parse_args()
-
     folder = "../data/" + args.folder
+    
     if (args.undirected == True):
-        A = [nx.MultiGraph() for l in range(args.L)]
+        A = [nx.MultiGraph() for l in range(args.L)] #For graphs
     else:
-        A = [nx.MultiDiGraph() for l in range(args.L)]
+        A = [nx.MultiDiGraph() for l in range(args.L)] #For Directed Graphs
 
     tools.readGraph(folder, args.adj, A)
     print("Undirected: ", bool(args.undirected))
     tools.printGraphStat(A, args.undirected)
 
     if (args.out_adjacency):
-        tools.outGraph(folder, A)
+        tools.outGraph(folder, A)   #Print the adjacency matrix
 
     if (args.undirected == True):
-        out_list = inc_list = tools.removeZeroEntriesUndirected(A)
+        out_list = inc_list = tools.removeZeroEntriesUndirected(A) # list of nodes with zero in and out degree
     else:
-        out_list = tools.removeZeroEntriesOut(A)
-        inc_list = tools.removeZeroEntriesIn(A)
+        out_list = tools.removeZeroEntriesOut(A) # list of nodes with zero out degree
+        inc_list = tools.removeZeroEntriesIn(A) # list of nodes with zero in degree
 
+    #Call to the EM function
     MEP = mep.MEP(
         N=A[0].number_of_nodes(),
         L=args.L,
@@ -59,18 +60,19 @@ def main():
         adj=args.adj,
         aff_file=args.aff_file)
 
-    tic = time.clock()
-    N = A[0].number_of_nodes()
-    B = np.empty(shape=[args.L, N, N])
-
+    #Start the clock
+    startTimer = time.clock()
+    N = A[0].number_of_nodes()  #Actual graph
+    B = np.empty(shape=[args.L, N, N])  #L*N*N matrix represntation of the graph
+    #Populate the matrix B
     for l in range(args.L):
         B[l, :, :] = nx.to_numpy_matrix(A[l], weight='weight')
 
     MEP.cycleRealizations(A, B, out_list, inc_list)
 
-    toc = time.clock()
-    print(toc - tic, " seconds.")
-
+    #Stop the clock
+    stopTimer = time.clock()
+    print(stopTimer - startTimer, " seconds.")
 
 if __name__ == '__main__':
     main()
