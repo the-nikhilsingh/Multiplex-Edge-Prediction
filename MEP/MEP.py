@@ -188,24 +188,30 @@ class MEP:
     #Update the node's value associated with the outgoing edge only 
     def updateOUT(self, A):
 
+        #Derivative of out and aff_K
         D_out = np.einsum('iq->q', self.inc_old)
         aff_K = np.einsum('kqa->kq', self.aff_old)
         Z_outk = np.einsum('q,kq->k', D_out, aff_K)
+        #Calculate the old value of rho (eq 5 numerator)
         rho_ijka = np.einsum('jq,kqa->jka', self.inc_old, self.aff_old)
-
+        #Calculate the new value of rho (eq 5 numerator)
         rho_ijka = np.einsum('ik,jka->ijka', self.out, rho_ijka)
-
+        #Eq 5 denominator
         Z_ija = np.einsum('ijka->ija', rho_ijka)
         Z_ijka = np.einsum('k,ija->ijka', Z_outk, Z_ija)
 
         non_zeros = Z_ijka > 0.
-
+        
+        #Final value of rho
         rho_ijka[non_zeros] /= Z_ijka[non_zeros]
 
+        #New value of out, using the values of A and rho
         self.out = np.einsum('aij,ijka->ik', A, rho_ijka)
 
+        #Initialise very less values to 0
         low_values_indices = self.out < self.max_err
         self.out[low_values_indices] = 0.
+        #Difference between the new and the old values
         dist_out = np.amax(abs(self.out - self.out_old))
         self.out_old = self.out
         return dist_out
@@ -214,23 +220,30 @@ class MEP:
     #Update the node's value associated with the incoming edge only
     def updateINC(self, A):
 
+        #Derivative of inc and aff_K
         D_inc = np.einsum('iq->q', self.out_old)
         aff_K = np.einsum('qka->qk', self.aff_old)
         Z_inck = np.einsum('q,qk->k', D_inc, aff_K)
+        #Calculate the old value of rho (eq 5 numerator)
         rho_jika = np.einsum('jq,qka->jka', self.out_old, self.aff_old)
-
+        #Calculate the new value of rho (eq 5 numerator)
         rho_jika = np.einsum('ik,jka->jika', self.inc, rho_jika)
-
+        #Eq 5 denominator
         Z_jia = np.einsum('jika->jia', rho_jika)
         Z_jika = np.einsum('k,jia->jika', Z_inck, Z_jia)
+
         non_zeros = Z_jika > 0.
 
+        #Final value of rho
         rho_jika[non_zeros] /= Z_jika[non_zeros]
 
+        #New value of inc, using the values of A and rho
         self.inc = np.einsum('aji,jika->ik', A, rho_jika)
 
+        #Initialise very less values to 0
         low_values_indices = self.inc < self.max_err
         self.inc[low_values_indices] = 0.
+        #Difference between the new and the old values
         dist_inc = np.amax(abs(self.inc - self.inc_old))
         self.inc_old = self.inc
 
@@ -238,20 +251,37 @@ class MEP:
 
     #Update the value of the affinity matrix
     def updateAFF(self, A):
+
+        #Partial derivative of out and inc
         out_k = np.einsum('ik->k', self.out)
         inc_k = np.einsum('ik->k', self.inc)
+
+        #Multiply the values of k to get a K*K matrix
         Z_kq = np.einsum('k,q->kq', out_k, inc_k)
+        #Summation of inc over q (Eq. 10 denominator)
         Z_ija = np.einsum('jq,kqa->jka', self.inc, self.aff_old)
+        #Summation of out over k (Eq. 10 denominator)
         Z_ija = np.einsum('ik,jka->ija', self.out, Z_ija)
+
+        #Transpose matrix A
         B = np.einsum('aij->ija', A)
+
         non_zeros = Z_ija > 0.
+
+        #Eq. 10
         Z_ija[non_zeros] = B[non_zeros] / Z_ija[non_zeros]
+
+        #Eq. 5
         rho_ijkqa = np.einsum('ija,ik->jka', Z_ija, self.out)
         rho_ijkqa = np.einsum('jka,jq->kqa', rho_ijkqa, self.inc)
         rho_ijkqa = np.einsum('kqa,kqa->kqa', rho_ijkqa, self.aff_old)
+
         self.aff = np.einsum('kqa,kq->kqa', rho_ijkqa, 1. / Z_kq)
+
+        #Initialise very less values to 0
         low_values_indices = self.aff < self.max_err
         self.aff[low_values_indices] = 0.
+        #Difference between the new and the old values
         dist_aff = np.amax(abs(self.aff - self.aff_old))
         self.aff_old = self.aff
         return dist_aff
@@ -271,33 +301,36 @@ class MEP:
 
     #Iterative function
     def Likelihood(self, A):
+        #Multiply out, inc and aff to calculate Poisson distribution's mean mu (Eq. 1)
         mu_ija = np.einsum('kql,jq->klj', self.aff, self.inc)
         mu_ija = np.einsum('ik,klj->lij', self.out, mu_ija)
-        l = -mu_ija.sum()
+        l = -mu_ija.sum() #Eq.3 RHS 2nd operand
+
         non_zeros = A > 0
-        logM = np.log(mu_ija[non_zeros])
-        Alog = A[non_zeros] * logM
+        #Log likelihood function (Eq. 3 RHS)
+        logM = np.log(mu_ija[non_zeros]) #log
+        Alog = A[non_zeros] * logM #Eq.3 RHS 1st operand
         l += Alog.sum()
 
         if (np.isnan(l)):
             print("Likelihood is NaN")
             sys.exit(1)
         else:
-            return l
+            return l #Max Likelihood (Eq.3 LHS)
 
     #Function to check if the likelihood value has changed or not. Returns the number of iteration
-    def checkConvergence(self, B, iter, l2, coincide, convergence):
+    def checkConvergence(self, B, iter, new_L, coincide, convergence):
         if (iter % 10 == 0):
-            old_L = l2
-            l2 = self.Likelihood(B)
-            if (abs(l2 - old_L) < self.tolerance):
+            old_L = new_L
+            new_L = self.Likelihood(B)
+            if (abs(new_L - old_L) < self.tolerance): #if (new likehood-old likelihood)>0, it coincides
                 coincide += 1
             else:
                 coincide = 0
         if (coincide > 10):
-            convergence = True
+            convergence = True  #if it coincides more than 10 times, it converges
         iter += 1
-        return iter, l2, coincide, convergence
+        return iter, new_L, coincide, convergence
 
     #Main function of the program to initialize and perform the EM function
     def cycleRealizations(self, A, B, out_list, inc_list):
@@ -309,7 +342,7 @@ class MEP:
             coincide = 0
             convergence = False
             iter = 0
-            l2 = self.infinity
+            new_L = self.infinity
             delta_out = delta_inc = delta_aff = self.infinity
             print("Updating r:", r, " ...")
             tic = time.clock()
@@ -317,14 +350,14 @@ class MEP:
                 #Updates matrices and calculates the maximum difference between new and old
                 delta_out, delta_inc, delta_aff = self.updateEM(B)
 
-                iter, l2, coincide, convergence = self.checkConvergence(
-                    B, iter, l2, coincide, convergence)
-            print("r: ", r, " Likelihood: ", l2, " iterations: ", iter,
+                iter, new_L, coincide, convergence = self.checkConvergence(
+                    B, iter, new_L, coincide, convergence)
+            print("r: ", r, " Likelihood: ", new_L, " iterations: ", iter,
                   ' time: ',
                   time.clock() - tic, 's')
-            if (maxL < l2):
+            if (maxL < new_L):
                 self.updateFinalParam()
-                maxL = l2
+                maxL = new_L
             self.rseed += 1
         print("Final Likelihood: ", maxL)
         self.display(maxL, nodes)
