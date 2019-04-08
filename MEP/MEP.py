@@ -7,10 +7,10 @@ import tools
 
 class MEP:
     def __init__(self,
-                 N=100,
-                 L=1,
-                 K=2,
-                 N_real=1,
+                 N=100,     #number of nodes
+                 L=1,       #number of layers   
+                 K=2,        #number of communities
+                 N_real=1,     
                  tolerance=0.1,
                  rseed=0,
                  out_adjacency=False,
@@ -35,19 +35,19 @@ class MEP:
         self.folder = folder
         self.adj = adj
         self.aff_file = aff_file
+        
+        self.out = np.zeros((self.N, self.K), dtype=float) #outgoing membership values
+        self.inc = np.zeros((self.N, self.K), dtype=float)  #incoming membership values
 
-        self.out = np.zeros((self.N, self.K), dtype=float)
-        self.inc = np.zeros((self.N, self.K), dtype=float)
+        self.out_old = np.zeros((self.N, self.K), dtype=float) #old outgoing membership values
+        self.inc_old = np.zeros((self.N, self.K), dtype=float)  #old incoming membership values
 
-        self.out_old = np.zeros((self.N, self.K), dtype=float)
-        self.inc_old = np.zeros((self.N, self.K), dtype=float)
+        self.out_f = np.zeros((self.N, self.K), dtype=float)   #final outgoing membership values
+        self.inc_f = np.zeros((self.N, self.K), dtype=float)    #final incoming membership values
 
-        self.out_f = np.zeros((self.N, self.K), dtype=float)
-        self.inc_f = np.zeros((self.N, self.K), dtype=float)
-
-        self.aff = np.zeros((self.K, self.K, self.L), dtype=float)
-        self.aff_old = np.zeros((self.K, self.K, self.L), dtype=float)
-        self.aff_f = np.zeros((self.K, self.K, self.L), dtype=float)
+        self.aff = np.zeros((self.K, self.K, self.L), dtype=float) #new affinity matrix
+        self.aff_old = np.zeros((self.K, self.K, self.L), dtype=float) #old affinity matrix
+        self.aff_f = np.zeros((self.K, self.K, self.L), dtype=float)    #final affinity matrix
 
     def randomizeAff(self, rng):
         for i in range(self.L):
