@@ -112,7 +112,7 @@ class MEP:
                     print(self.aff[k][q][l])
 
     #update the old variables
-    def updateOldVar(self, out_list, inc_list):
+    def updateOlD_incar(self, out_list, inc_list):
         for i in range(len(out_list)):
             for k in range(self.K):
                 self.out_old[out_list[i]][k] = self.out[out_list[i]][k]
@@ -124,31 +124,28 @@ class MEP:
                 for q in range(self.K):
                     self.aff_old[k][q][l] = self.aff[k][q][l]
 
+    #Function to copy the matrices to the old matrices
     def updateFinalParam(self):
         self.out_f = np.copy(self.out)
         self.inc_f = np.copy(self.inc)
         self.aff_f = np.copy(self.aff)
 
-    #display results after convergence
+    #Display results after convergence
     def display(self, maxL, nodes):
         node_list = np.sort([int(i) for i in nodes])
         infile1 = self.folder + "out_K" + str(self.K) + ".txt"
         infile3 = self.folder + "aff_K" + str(self.K) + ".txt"
+        #Open only the affinity and outgoing in write mode incase it is undirected
         in1 = open(infile1, 'w')
         in3 = open(infile3, 'w')
         print(in1, "Max Likelihood: ", maxL, "\nN_real: ", self.N_real, "\n")
         print(in3, "Max Likelihood: ", maxL, "\nN_real: ", self.N_real, "\n")
         if (self.undirected == False):
             infile2 = self.folder + "inc_K" + str(self.K) + ".txt"
-            in2 = open(infile2, 'w')
-            print(
-                "Max Likelihood: ",
-                maxL,
-                " \nN_real: ",
-                self.N_real,
-                "\n",
-                file=in2)
+            in2 = open(infile2, 'w') #Open the incoming file in write mode once we know that the graph is directed
+            print("Max Likelihood: ", maxL, " \nN_real: ", self.N_real, "\n", file=in2)
 
+        #Print the node number and the final probability value of each node in the community
         for out in node_list:
             i = nodes.index(str(out))
             print("Node:", out, file=in1)
@@ -162,10 +159,12 @@ class MEP:
             if (self.undirected == False):
                 print(file=in2)
 
+        #Close the files after writing to it
         in1.close()
         if (self.undirected == False):
             in2.close()
 
+        #Print the probability of affinity of one community with another
         for l in range(self.L):
             print("Layer: ", (l + 1), file=in3)
             for k in range(self.K):
@@ -176,6 +175,7 @@ class MEP:
         in3.close()
         self.displayAffinity()
 
+        #print the location of the output file
         print("Data saved in: ")
         print(infile1)
         print(infile3)
@@ -185,11 +185,12 @@ class MEP:
 
 # EM = Estimation Maximisation. Iterative method to find out the MAP
 
+    #Update the node's value associated with the outgoing edge only 
     def updateOUT(self, A):
 
-        Du = np.einsum('iq->q', self.inc_old)
+        D_out = np.einsum('iq->q', self.inc_old)
         aff_K = np.einsum('kqa->kq', self.aff_old)
-        Z_outk = np.einsum('q,kq->k', Du, aff_K)
+        Z_outk = np.einsum('q,kq->k', D_out, aff_K)
         rho_ijka = np.einsum('jq,kqa->jka', self.inc_old, self.aff_old)
 
         rho_ijka = np.einsum('ik,jka->ijka', self.out, rho_ijka)
@@ -202,19 +203,24 @@ class MEP:
         rho_ijka[non_zeros] /= Z_ijka[non_zeros]
 
         self.out = np.einsum('aij,ijka->ik', A, rho_ijka)
+
         low_values_indices = self.out < self.max_err
         self.out[low_values_indices] = 0.
         dist_out = np.amax(abs(self.out - self.out_old))
         self.out_old = self.out
         return dist_out
 
+
+    #Update the node's value associated with the incoming edge only
     def updateINC(self, A):
 
-        Dv = np.einsum('iq->q', self.out_old)
+        D_inc = np.einsum('iq->q', self.out_old)
         aff_K = np.einsum('qka->qk', self.aff_old)
-        Z_inck = np.einsum('q,qk->k', Dv, aff_K)
+        Z_inck = np.einsum('q,qk->k', D_inc, aff_K)
         rho_jika = np.einsum('jq,qka->jka', self.out_old, self.aff_old)
+
         rho_jika = np.einsum('ik,jka->jika', self.inc, rho_jika)
+
         Z_jia = np.einsum('jika->jia', rho_jika)
         Z_jika = np.einsum('k,jia->jika', Z_inck, Z_jia)
         non_zeros = Z_jika > 0.
@@ -230,10 +236,11 @@ class MEP:
 
         return dist_inc
 
+    #Update the value of the affinity matrix
     def updateAFF(self, A):
-        uk = np.einsum('ik->k', self.out)
-        vk = np.einsum('ik->k', self.inc)
-        Z_kq = np.einsum('k,q->kq', uk, vk)
+        out_k = np.einsum('ik->k', self.out)
+        inc_k = np.einsum('ik->k', self.inc)
+        Z_kq = np.einsum('k,q->kq', out_k, inc_k)
         Z_ija = np.einsum('jq,kqa->jka', self.inc, self.aff_old)
         Z_ija = np.einsum('ik,jka->ija', self.out, Z_ija)
         B = np.einsum('aij->ija', A)
@@ -249,8 +256,8 @@ class MEP:
         self.aff_old = self.aff
         return dist_aff
 
+    #Returns the partial derivative for values of out, inc and aff 
     def updateEM(self, B):
-
         d_out = self.updateOUT(B)
         if (self.undirected == True):
             self.inc = self.out
@@ -262,6 +269,7 @@ class MEP:
 
         return d_out, d_inc, d_aff
 
+    #Iterative function
     def Likelihood(self, A):
         mu_ija = np.einsum('kql,jq->klj', self.aff, self.inc)
         mu_ija = np.einsum('ik,klj->lij', self.out, mu_ija)
@@ -277,6 +285,7 @@ class MEP:
         else:
             return l
 
+    #Function to check if the likelihood value has changed or not. Returns the number of iteration
     def checkConvergence(self, B, iter, l2, coincide, convergence):
         if (iter % 10 == 0):
             old_L = l2
@@ -290,12 +299,13 @@ class MEP:
         iter += 1
         return iter, l2, coincide, convergence
 
+    #Main function of the program to initialize and perform the EM function
     def cycleRealizations(self, A, B, out_list, inc_list):
         maxL = -1000000000  #1Billion
         nodes = list(A[0].nodes())
         for r in range(self.N_real):
             self.initialize(out_list, inc_list, nodes)
-            self.updateOldVar(out_list, inc_list)
+            self.updateOlD_incar(out_list, inc_list)
             coincide = 0
             convergence = False
             iter = 0
@@ -304,7 +314,7 @@ class MEP:
             print("Updating r:", r, " ...")
             tic = time.clock()
             while (convergence == False and iter < 500):
-                # Main EM update: updates membership and calculates max difference new vs old
+                #Updates matrices and calculates the maximum difference between new and old
                 delta_out, delta_inc, delta_aff = self.updateEM(B)
 
                 iter, l2, coincide, convergence = self.checkConvergence(
