@@ -11,15 +11,15 @@ class MEP:
                  L=1,       #number of layers   
                  K=2,        #number of communities
                  N_real=1,     
-                 tolerance=0.1,
-                 rseed=0,
+                 tolerance=0.1, #covergence tolerence
+                 rseed=0,   #seed for random real numbers
                  out_adjacency=False,
                  infinity=1e10,
-                 max_err=0.00001,
-                 err=0.1,
+                 max_err=0.00001,   #
+                 err=0.1,   #error added when initialising the parameters from file
                  undirected=False,
                  folder="data/",
-                 adj="SocialMedia.txt",
+                 adj="SocialMedia.txt", 
                  aff_file="aff.txt"):
         self.N = N
         self.L = L
@@ -49,18 +49,19 @@ class MEP:
         self.aff_old = np.zeros((self.K, self.K, self.L), dtype=float) #old affinity matrix
         self.aff_f = np.zeros((self.K, self.K, self.L), dtype=float)    #final affinity matrix
 
-    def randomizeAff(self, rng):
-        for i in range(self.L):
-            for k in range(self.K):
-                for q in range(k, self.K):
+    def randomizeAff(self, rng): #funtion to assign a random number between 0 and 1 to each entry
+        for i in range(self.L): #iterate over all the layers
+            for k in range(self.K): #iterate over all the communities
+                for q in range(k, self.K): 
                     if (q == k):
                         self.aff[k, q, i] = rng.random_sample(1)
                     else:
                         self.aff[k, q, i] = self.aff[
                             q, k, i] = self.err * rng.random_sample(1)
 
-    def randomizeOutInc(self, rng, out_list, inc_list):
-        rng = np.random.RandomState(self.rseed)
+
+    def randomizeOutInc(self, rng, out_list, inc_list): #randomise the membership entries except from zero
+        rng = np.random.RandomState(self.rseed) #random number generator
         for k in range(self.K):
             for i in range(len(out_list)):
                 j = out_list[i]
@@ -72,7 +73,7 @@ class MEP:
                     j = inc_list[i]
                     self.inc[j][k] = rng.random_sample(1)
 
-    def initialize(self, out_list, inc_list, nodes):
+    def initialize(self, out_list, inc_list, nodes):    #Initialize affinity matix from diagonal one extracted from file
         rng = np.random.RandomState(self.rseed)
         infile1 = self.folder + 'out_K' + str(self.K) + self.aff_file
         infile2 = self.folder + 'inc_K' + str(self.K) + self.aff_file
@@ -81,7 +82,7 @@ class MEP:
         self.randomizeAff(rng)
         self.randomizeOutInc(rng, out_list, inc_list)
 
-    def displayMembership(self, nodes):
+    def displayMembership(self, nodes): #display the degree of the nodes
         print(" out : ")
         for i in range(self.N):
             print(nodes[i])
@@ -94,7 +95,7 @@ class MEP:
                 for k in range(self.K):
                     print(self.inc[i][k])
 
-    def displayAffinity(self):
+    def displayAffinity(self):  #display the affinity matrix
         print(" aff:")
         for l in range(self.L):
             print("Layer: ", (l + 1))
@@ -102,7 +103,7 @@ class MEP:
                 for q in range(self.K):
                     print(self.aff[k][q][l])
 
-    def updateOldVar(self, out_list, inc_list):
+    def updateOldVar(self, out_list, inc_list): #update the old variables
         for i in range(len(out_list)):
             for k in range(self.K):
                 self.out_old[out_list[i]][k] = self.out[out_list[i]][k]
@@ -119,7 +120,7 @@ class MEP:
         self.inc_f = np.copy(self.inc)
         self.aff_f = np.copy(self.aff)
 
-    def display(self, maxL, nodes):
+    def display(self, maxL, nodes): #display results after convergence
         node_list = np.sort([int(i) for i in nodes])
         infile1 = self.folder + "out_K" + str(self.K) + ".txt"
         infile3 = self.folder + "aff_K" + str(self.K) + ".txt"
