@@ -61,10 +61,6 @@ class MEP:
                         self.aff[k, q, i] = self.aff[
                             q, k, i] = self.err * rng.random_sample(1)
 
-    #Initalise the incoming and outgoing matrix
-    def randomiseOutInc(self, rng, out_list, inc_list):
-        rng = np.random.RandomState(self.rseed)
-
     def randomizeOutInc(self, rng, out_list, inc_list): #randomise the membership entries except from zero
         rng = np.random.RandomState(self.rseed) #random number generator
         for k in range(self.K):
@@ -86,7 +82,7 @@ class MEP:
         aff_infile = self.folder + 'aff_K' + str(self.K) + self.aff_file
         #Calling the randomise function
         self.randomiseAff(rng)
-        self.randomiseOutInc(rng, out_list, inc_list)
+        self.randomizeOutInc(rng, out_list, inc_list)
 
     #Function to display display the degree of the nodes
     def displayMembership(self, nodes):
@@ -112,7 +108,7 @@ class MEP:
                     print(self.aff[k][q][l])
 
     #update the old variables
-    def updateOlD_incar(self, out_list, inc_list):
+    def updateOldVar(self, out_list, inc_list): #update the old variables
         for i in range(len(out_list)):
             for k in range(self.K):
                 self.out_old[out_list[i]][k] = self.out[out_list[i]][k]
@@ -338,7 +334,7 @@ class MEP:
         nodes = list(A[0].nodes())
         for r in range(self.N_real):
             self.initialize(out_list, inc_list, nodes)
-            self.updateOlD_incar(out_list, inc_list)
+            self.updateOldVar(out_list, inc_list)
             coincide = 0
             convergence = False
             iter = 0
