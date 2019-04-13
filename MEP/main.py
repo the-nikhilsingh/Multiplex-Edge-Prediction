@@ -9,14 +9,14 @@ import time
 def main():
     #Argument Passer
     infinity = 10000000000000 #10 Trillion
-    max_err = 0.0000001
+    threshold = 0.0000001
     p = ArgumentParser()
     p.add_argument('-f', '--folder', type=str, default='')
     p.add_argument('-a', '--adj', type=str, default='SocialMedia.txt')
     p.add_argument('-aff', '--aff_file', type=str, default='aff.txt')
     p.add_argument('-l', '--L', type=int, default=4)
     p.add_argument('-k', '--K', type=int, default=5)
-    p.add_argument('-r', '--N_real', type=int, default=1)
+    p.add_argument('-r', '--num_realisation', type=int, default=1)
     p.add_argument('-e', '--tolerance', type=float, default=0.1)
     p.add_argument('-g', '--err', type=float, default=0.1)
     p.add_argument('-o', '--out_adjacency', type=int, default=1)
@@ -48,12 +48,12 @@ def main():
         N=A[0].number_of_nodes(),
         L=args.L,
         K=args.K,
-        N_real=args.N_real,
+        num_realisation=args.num_realisation,
         tolerance=args.tolerance,
         rseed=args.rseed,
         out_adjacency=bool(args.out_adjacency),
         infinity=infinity,
-        max_err=max_err,
+        threshold=threshold,
         err=args.err,
         undirected=bool(args.undirected),
         folder=folder,

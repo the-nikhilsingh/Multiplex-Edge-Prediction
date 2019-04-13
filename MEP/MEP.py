@@ -9,12 +9,12 @@ class MEP:
                  N=100,     #number of nodes
                  L=1,       #number of layers   
                  K=2,       #number of communities
-                 N_real=1,     
+                 num_realisation=1,  #number of realisation
                  tolerance=0.1, #covergence tolerence
                  rseed=0,   #seed for random real numbers
                  out_adjacency=False,
                  infinity=1e10,
-                 max_err=0.00001,
+                 threshold=0.00001,
                  err=0.1,   #error added when initialising the parameters from file
                  undirected=False,
                  folder="data/",
@@ -23,12 +23,12 @@ class MEP:
         self.N = N
         self.L = L
         self.K = K
-        self.N_real = N_real
+        self.num_realisation = num_realisation
         self.tolerance = tolerance
         self.rseed = rseed
         self.out_adjacency = out_adjacency
         self.infinity = infinity
-        self.max_err = max_err
+        self.threshold = threshold
         self.err = err
         self.undirected = undirected
         self.folder = folder
@@ -58,8 +58,7 @@ class MEP:
                     if (q == k):
                         self.aff[k, q, i] = rng.random_sample(1)
                     else:
-                        self.aff[k, q, i] = self.aff[
-                            q, k, i] = self.err * rng.random_sample(1)
+                        self.aff[k, q, i] = self.aff[ q, k, i] = self.err * rng.random_sample(1) #Why multiply
 
     def randomizeOutInc(self, rng, out_list, inc_list): #randomise the membership entries except from zero
         rng = np.random.RandomState(self.rseed) #random number generator
@@ -77,26 +76,9 @@ class MEP:
     #Function calling the randomise functions
     def initialize(self, out_list, inc_list, nodes):
         rng = np.random.RandomState(self.rseed) #RandomState is a method for generating random numbers drawn from probability distributions
-        infile1 = self.folder + 'out_K' + str(self.K) + self.aff_file
-        infile2 = self.folder + 'inc_K' + str(self.K) + self.aff_file
-        aff_infile = self.folder + 'aff_K' + str(self.K) + self.aff_file
         #Calling the randomise function
         self.randomiseAff(rng)
         self.randomizeOutInc(rng, out_list, inc_list)
-
-    #Function to display display the degree of the nodes
-    def displayMembership(self, nodes):
-        print(" out : ")
-        for i in range(self.N):
-            print(nodes[i])
-            for k in range(self.K):
-                print(self.out[i][k])
-        if (self.undirected == False):
-            print(" inc : ")
-            for i in range(self.N):
-                print(nodes[i])
-                for k in range(self.K):
-                    print(self.inc[i][k])
 
     #display the affinity matrix
     def displayAffinity(self):  
@@ -134,12 +116,12 @@ class MEP:
         #Open only the affinity and outgoing in write mode incase it is undirected
         in1 = open(infile1, 'w')
         in3 = open(infile3, 'w')
-        print(in1, "Max Likelihood: ", maxL, "\nN_real: ", self.N_real, "\n")
-        print(in3, "Max Likelihood: ", maxL, "\nN_real: ", self.N_real, "\n")
+        print(in1, "Max Likelihood: ", maxL, "\nnum_realisation: ", self.num_realisation, "\n")
+        print(in3, "Max Likelihood: ", maxL, "\nnum_realisation: ", self.num_realisation, "\n")
         if (self.undirected == False):
             infile2 = self.folder + "inc_K" + str(self.K) + ".txt"
             in2 = open(infile2, 'w') #Open the incoming file in write mode once we know that the graph is directed
-            print("Max Likelihood: ", maxL, " \nN_real: ", self.N_real, "\n", file=in2)
+            print("Max Likelihood: ", maxL, " \nnum_realisation: ", self.num_realisation, "\n", file=in2)
 
         #Print the node number and the final probability value of each node in the community
         for out in node_list:
@@ -205,7 +187,7 @@ class MEP:
         self.out = np.einsum('aij,ijka->ik', A, rho_ijka)
 
         #Initialise very less values to 0
-        low_values_indices = self.out < self.max_err
+        low_values_indices = self.out < self.threshold
         self.out[low_values_indices] = 0.
         #Difference between the new and the old values
         dist_out = np.amax(abs(self.out - self.out_old))
@@ -237,7 +219,7 @@ class MEP:
         self.inc = np.einsum('aji,jika->ik', A, rho_jika)
 
         #Initialise very less values to 0
-        low_values_indices = self.inc < self.max_err
+        low_values_indices = self.inc < self.threshold
         self.inc[low_values_indices] = 0.
         #Difference between the new and the old values
         dist_inc = np.amax(abs(self.inc - self.inc_old))
@@ -254,9 +236,9 @@ class MEP:
 
         #Multiply the values of k to get a K*K matrix
         Z_kq = np.einsum('k,q->kq', out_k, inc_k)
-        #Summation of inc over q (Eq. 10 denominator)
+        #Summation of inc over q (Eq. 5 denominator)
         Z_ija = np.einsum('jq,kqa->jka', self.inc, self.aff_old)
-        #Summation of out over k (Eq. 10 denominator)
+        #Summation of out over k (Eq. 5 denominator)
         Z_ija = np.einsum('ik,jka->ija', self.out, Z_ija)
 
         #Transpose matrix A
@@ -264,10 +246,10 @@ class MEP:
 
         non_zeros = Z_ija > 0.
 
-        #Eq. 10
+        #Eq. 10 preprocessing
         Z_ija[non_zeros] = B[non_zeros] / Z_ija[non_zeros]
 
-        #Eq. 5
+        #Eq. 10 numerator
         rho_ijkqa = np.einsum('ija,ik->jka', Z_ija, self.out)
         rho_ijkqa = np.einsum('jka,jq->kqa', rho_ijkqa, self.inc)
         rho_ijkqa = np.einsum('kqa,kqa->kqa', rho_ijkqa, self.aff_old)
@@ -275,7 +257,7 @@ class MEP:
         self.aff = np.einsum('kqa,kq->kqa', rho_ijkqa, 1. / Z_kq)
 
         #Initialise very less values to 0
-        low_values_indices = self.aff < self.max_err
+        low_values_indices = self.aff < self.threshold
         self.aff[low_values_indices] = 0.
         #Difference between the new and the old values
         dist_aff = np.amax(abs(self.aff - self.aff_old))
@@ -332,7 +314,7 @@ class MEP:
     def cycleRealizations(self, A, B, out_list, inc_list):
         maxL = -1000000000  #1Billion
         nodes = list(A[0].nodes())
-        for r in range(self.N_real):
+        for r in range(self.num_realisation):
             self.initialize(out_list, inc_list, nodes)
             self.updateOldVar(out_list, inc_list)
             coincide = 0
