@@ -1,0 +1,4 @@
+data/SocialMedia/layer1.edges;Layer1;data/SocialMedia/layout.txt
+data/SocialMedia/layer2.edges;Layer2;data/SocialMedia/layout.txt
+data/SocialMedia/layer3.edges;Layer3;data/SocialMedia/layout.txt
+data/SocialMedia/layer4.edges;Layer4;data/SocialMedia/layout.txt
