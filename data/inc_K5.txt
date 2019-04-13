@@ -1,5 +1,5 @@
 Max Likelihood:  -27017.817733230397  
-N_real:  1 
+num_realisation:  1 
 
 Node: 1
 0.0

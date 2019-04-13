@@ -63,6 +63,8 @@ def main():
     #Start the clock
     startTimer = time.clock()
     N = A[0].number_of_nodes()  #Actual graph
+    print("@@@",A[0].nodes())
+    print("%%%",A[0].edges())
     B = np.empty(shape=[args.L, N, N])  #L*N*N matrix represntation of the graph
     #Populate the matrix B
     for l in range(args.L):
