@@ -28,7 +28,7 @@ Needs three main Python modules to be downloaded:
 
 ## What's included:
 - `main.py` : General version of the algorithm. Considers both directed and undirected weigthed multilayer networks with any community structures (non-diagonal or restricted diagonal affinity matrices W).
-- `MultiTensor.py` : Contains the class definition of a Multilayer network with all the member functions required.
+- `MEP.py` : Contains the class definition of a Multilayer network with all the member functions required.
 - `tools.py` : Contains non-class functions.
 
 Use the version that most resembles your network, i.e. if you have an undirected network set the flag '-u=1'. If you also know that the partition is assortative then use the flag '-A=1'.
@@ -42,13 +42,12 @@ Use the version that most resembles your network, i.e. if you have an undirected
 - `-f` : Folder where the adjacency input and output are/will be stored (inside `data` folder).
 
 ## Optional arguments
-
 * `-aff` : End of the file where the parameters can be initialized from, in case initialization variable is greater than 0.
 * `-l` : Number of layers, default is 4.
 * `-k` : Number of communities, default is 5.
 * `-r` : Number of different realizations, the final parameters will be the one corresponding to the realization leading to the max likelihood. Default is 1.
-* `-e` : Convergence tolerance. Default is 0.1 .
-* `-g` : Error added when intializing parameters from file. Default is 0.1 .
+* `-t` : Convergence tolerance. Default is 0.1 .
+* `-e` : Error added when intializing parameters from file. Default is 0.1 .
 * `-o` : Flag to output adjacency matrix. Default is 0 (False).
-* `-z` : Seed for random real numbers.
+* `-s` : Seed for random real numbers.
 * `-u` : Flag to call the undirected network, default is 0 (False).
