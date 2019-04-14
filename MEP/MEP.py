@@ -12,13 +12,12 @@ class MEP:
                  num_realisation=1,  # number of realisation
                  tolerance=0.1, # covergence tolerence
                  rseed=0,   # seed for random real numbers
-                 out_adjacency=False,
                  infinity=1e10,
                  threshold=0.00001,
                  err=0.1,   # error added when initialising the parameters from file
                  undirected=False,
-                 folder="data/",
-                 adj="SocialMedia.txt", 
+                 folder="/data/",
+                 input="SocialMedia.txt", 
                  aff_file="aff.txt"):
         self.N = N
         self.L = L
@@ -26,13 +25,12 @@ class MEP:
         self.num_realisation = num_realisation
         self.tolerance = tolerance
         self.rseed = rseed
-        self.out_adjacency = out_adjacency
         self.infinity = infinity
         self.threshold = threshold
         self.err = err
         self.undirected = undirected
         self.folder = folder
-        self.adj = adj
+        self.input = input
         self.aff_file = aff_file
 
         # Values for updating

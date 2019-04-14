@@ -48,6 +48,5 @@ Use the version that most resembles your network, i.e. if you have an undirected
 * `-r` : Number of different realizations, the final parameters will be the one corresponding to the realization leading to the max likelihood. Default is 1.
 * `-t` : Convergence tolerance. Default is 0.1 .
 * `-e` : Error added when intializing parameters from file. Default is 0.1 .
-* `-o` : Flag to output adjacency matrix. Default is 0 (False).
 * `-s` : Seed for random real numbers.
 * `-u` : Flag to call the undirected network, default is 0 (False).

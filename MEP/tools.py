@@ -54,9 +54,9 @@ def idx(i, A):
 
 
 # function to read the graph from file and put it in correct format
-def readGraph(folder, adjacency_file, A):
-    print("Adjacency file :", folder + adjacency_file)
-    infile = open(folder + adjacency_file, 'r') # Opening the file in read mode
+def readGraph(folder, input_file, A):
+    print("Input file :", folder + input_file)
+    infile = open(folder + input_file, 'r') # Opening the file in read mode
     nr = 0
     L = len(A)
     for line in infile:
@@ -87,17 +87,3 @@ def printGraphStat(A, undirected=False):
             E = 0.5 * np.sum(B) # No of edges is half in case of undirected
         print('E[', (l + 1), ']:', E, " Density:",
               100 * float(E) / float(N * (N - 1)))
-
-
-def outGraph(folder, A):    # function to write the output in a text file.
-    L = len(A)
-    for a in range(L):
-        outfile = folder + "outAdjacency" + str(a + 1) + ".txt"
-        outf = open(outfile, 'w')
-        print("Adjacency of layer ", (a + 1), " output in: ", outfile)
-        # Traverse the edges and add the nodes to the output file
-        for e in A[a].edges():
-            i = e[0]
-            j = e[1]
-            print(i, j, file=outf)
-        outf.close()

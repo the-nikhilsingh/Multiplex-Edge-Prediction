@@ -1,9 +1,5 @@
-
 f = open("input.txt")
-
 lines = f.readlines()
-
-#print(lines[:2])
 
 for i in lines:
     line = i.rstrip('\n')
