@@ -1,8 +1,11 @@
-import time
 import sys
+import time
+
 import numpy as np
 from numpy.random import RandomState
+
 import tools
+
 
 class MEP:
     def __init__(self,

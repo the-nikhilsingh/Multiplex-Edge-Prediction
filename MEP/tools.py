@@ -1,6 +1,8 @@
-import networkx as nx
 import os
+
+import networkx as nx
 import numpy as np
+
 
 # function to remove all the edges which has inward degree as zero for directed edges. 
 def removeZeroEntriesIn(A):

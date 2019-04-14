@@ -1,10 +1,13 @@
-import MEP as mep
-import numpy as np
-import networkx as nx
-from argparse import ArgumentParser
 import sys
-import tools
 import time
+from argparse import ArgumentParser
+
+import networkx as nx
+import numpy as np
+
+import MEP as mep
+import tools
+
 
 def main():
     # Argument Passer
